@@ -1,147 +1,160 @@
 "use client";
-
-import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-
+import PixelBlast from "@/components/pixel-blast";
 import Preloader from "@/components/preloader";
+import Navbar from "@/components/navbar";
 import Alert from "@/components/alert";
-import SelectDrink from "@/components/selectDrink";
-import BarList from "@/components/barList";
+import SelectDrink from "@/components/select-drink";
+import Searching from "@/components/searching";
+import SearchResult from "@/components/search-result";
 
-export default function Home() {
-  const [currentIcon, setCurrentIcon] = useState("🍺");
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
 
-  const [searching, setSearching] = useState(false);
-  const [searchingResult, setSearchingResult] = useState(false);
-
-  const [showAlert, setShowAlert] = useState(false);
+export default function Page() {
   const [alertMessage, setAlertMessage] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [searchResult, setSearchResult] = useState(false);
 
-  const [barsResult, setBarsResult] = useState([]);
+  function handleSearch(id: string) {
+    // const options = {
+    //   enableHighAccuracy: true, // Vyžaduje GPS namiesto WiFi/IP
+    //   timeout: 15000, // Max 15 sekúnd čakania
+    //   maximumAge: 0, // Vždy získa novú polohu, nie cache
+    // };
 
-  const handleSearch = (drinkType: string, drinkIcon: string) => {
     if ("geolocation" in navigator) {
       setShowAlert(true);
-      setAlertMessage(
-        "Potrebujeme prístup k vašej polohe, aby sme našli najlepšie ponuky vo vašom okolí."
-      );
+      setAlertMessage("Získavam presnú GPS polohu...");
+
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const coords = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           };
-          setShowAlert(false);
-          setSearching(true);
+          const accuracy = position.coords.accuracy;
 
-          try {
-            // 1️⃣ Zavoláme /api/bars
-            const barsRes = await fetch(
-              `/api/bars?lat=${coords.lat}&lng=${coords.lng}`
+          console.log("User coordinates:", coords);
+          console.log("GPS Accuracy:", accuracy, "meters");
+
+          // ✅ Validácia presnosti - ak je presnosť horšia ako 100m, upozorni používateľa
+          if (accuracy > 100) {
+            setAlertMessage(
+              `⚠️ Nízka presnosť GPS (${Math.round(
+                accuracy
+              )}m). Výsledky nemusia byť presné. Skúste sa presunúť von alebo povoliť presnú lokalizáciu.`
             );
-            const barsData = await barsRes.json();
-            console.log("Bars API response:", barsData);
-
-            // 2️⃣ Zavoláme /api/prices s drinkType a zoznamom barov
-            const pricesRes = await fetch("/api/prices", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                drinkType, // typ nápoja, ktorý užívateľ vybral
-                bars: barsData.bars, // zoznam barov z predchádzajúceho fetch
-              }),
-            });
-            const pricesData = await pricesRes.json();
-            console.log("Prices API response:", pricesData);
-
-            // 3️⃣ Pridáme icon ku každému baru
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const barsWithIcon = pricesData.bars.map((bar: any) => ({
-              ...bar,
-              icon: drinkIcon,
-            }));
-
-            console.log("Bars with icon:", barsWithIcon);
-            setBarsResult(barsWithIcon);
-          } catch (error) {
-            console.error("Chyba pri fetchovaní barov alebo cien:", error);
+            // Počkáme 3 sekundy, aby používateľ videl upozornenie
+            await new Promise((resolve) => setTimeout(resolve, 3000));
           }
 
+          setShowAlert(false);
+          setSearching(true);
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+
           setSearching(false);
-          setSearchingResult(true);
-        },
-        (error) => {
-          setAlertMessage("Chyba pri získavaní polohy: " + error.message);
+          setSearchResult(true);
+
+
+
+          //   try {
+          //     // 1️⃣ Zavoláme /api/bars
+          //     const barsRes = await fetch(
+          //       `/api/bars?lat=${coords.lat}&lng=${coords.lng}`
+          //     );
+          //     const barsData = await barsRes.json();
+          //     console.log("Bars API response:", barsData);
+
+          //     // 2️⃣ Zavoláme /api/prices s drinkType a zoznamom barov
+          //     const pricesRes = await fetch("/api/prices", {
+          //       method: "POST",
+          //       headers: { "Content-Type": "application/json" },
+          //       body: JSON.stringify({
+          //         bars: barsData.bars, // zoznam barov z predchádzajúceho fetch
+          //       }),
+          //     });
+          //     const pricesData = await pricesRes.json();
+          //     console.log("Prices API response:", pricesData);
+
+          //     // 3️⃣ Pridáme icon ku každému baru
+          //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          //     const barsWithIcon = pricesData.bars.map((bar: any) => ({
+          //       ...bar,
+          //     }));
+
+          //     console.log("Bars with icon:", barsWithIcon);
+          //     // setBarsResult(barsWithIcon);
+          //   } catch (error) {
+          //     console.error("Chyba pri fetchovaní barov alebo cien:", error);
+          //     setShowAlert(true);
+          //     setAlertMessage("Chyba pri hľadaní barov. Skúste to znova.");
+          //   }
+          //   // setSearching(false);
+          //   // setSearchingResult(true);
+          // },
+          // (error) => {
+          //   setShowAlert(true);
+          //   let errorMsg = "❌ ";
+          //   switch (error.code) {
+          //     case error.PERMISSION_DENIED:
+          //       errorMsg +=
+          //         "Prístup k polohe bol zamietnutý. Povoľte lokalizáciu v nastaveniach prehliadača.";
+          //       break;
+          //     case error.POSITION_UNAVAILABLE:
+          //       errorMsg +=
+          //         "GPS signál nie je dostupný. Skúste sa presunúť von alebo reštartujte aplikáciu.";
+          //       break;
+          //     case error.TIMEOUT:
+          //       errorMsg +=
+          //         "GPS signál trvá príliš dlho. Skúste to znova alebo sa presuňte na miesto s lepším signálom.";
+          //       break;
+          //     default:
+          //       errorMsg += "Chyba pri získavaní polohy: " + error.message;
+          //   }
+          // setAlertMessage(errorMsg);
+          // setSearching(false);
         }
+        // options // ✅ Pridané GPS options
       );
     } else {
-      setAlertMessage("Geolokácia nie je podporovaná vo vašom prehliadači.");
+      setShowAlert(true);
+      setAlertMessage("❌ Geolokácia nie je podporovaná vo vašom prehliadači.");
     }
-  };
-
+  }
   return (
-    <>
+    <section className="h-screen w-full relative bg-[#191529] flex justify-center items-center">
       <Preloader />
       <AnimatePresence>
         {showAlert && <Alert message={alertMessage} />}
-        {!searching && !searchingResult && (
-          <motion.div
-            key="selecting"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.15 }}
-            className="h-screen w-full flex flex-col justify-center items-center gap-4 text-center"
-          >
-            <AnimatePresence mode="wait">
-              <motion.h1
-                key={currentIcon}
-                className="text-7xl"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15 }}
-              >
-                {currentIcon}
-              </motion.h1>
-            </AnimatePresence>
-            <h2 className="text-4xl md:text-5xl font-bold text-neutral-900">
-              Tvoj sprievodca drinkmi za najlepšiu cenu!
-            </h2>
-            <h3 className="text-2xl text-neutral-900">Na čo máš dnes chuť?</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-2xl">
-              <SelectDrink
-                onHover={setCurrentIcon}
-                onClick={(drinkType, drinkIcon) => handleSearch(drinkType, drinkIcon)}
-              />
-            </div>
-          </motion.div>
-        )}
-        {searching && !searchingResult && (
-          <motion.div
-            key="searching"
-            className="h-screen w-full flex flex-col justify-center items-center text-4xl md:text-5xl font-bold text-neutral-900"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            Hľadáme najlepšie ponuky vo vašom okolí...
-          </motion.div>
-        )}
-        {!searching && searchingResult && (
-          <motion.div
-            key="results"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.15 }}
-            className="h-screen w-full flex flex-col justify-center items-center"
-          >
-            <BarList bars={barsResult}/>
-          </motion.div>
-        )}
       </AnimatePresence>
-    </>
+      <Navbar />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+        className="size-full"
+      >
+        <PixelBlast
+          variant="circle"
+          pixelSize={7}
+          color="#B19EEF"
+          patternScale={3}
+          patternDensity={1.2}
+          pixelSizeJitter={0.5}
+          speed={0.6}
+          edgeFade={0.25}
+          transparent
+        />
+      </motion.div>
+      <AnimatePresence mode="wait">
+        {!searching && !searchResult && (
+          <SelectDrink key="select-drink" onclick={handleSearch} />
+        )}
+        {searching && !searchResult && <Searching key="searching" />}
+        {searchResult && <SearchResult key="search-result" />}
+      </AnimatePresence>
+    </section>
   );
 }

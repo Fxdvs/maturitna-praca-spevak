@@ -28,9 +28,7 @@ export async function GET(req: Request) {
   const radius = 5000;
   const query = "pub";
 
-  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&keyword=${encodeURIComponent(
-    query
-  )}&key=${process.env.GOOGLE_API_KEY}`;
+  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&keyword=${encodeURIComponent(query)}&key=${process.env.GOOGLE_API_KEY}`;
 
   try {
     const res = await fetch(url);

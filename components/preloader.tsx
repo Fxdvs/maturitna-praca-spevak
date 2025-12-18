@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
-import options from "./data/options";
+import options from "../lib/data/options";
 
 export default function Preloader() {
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ export default function Preloader() {
     <AnimatePresence>
       {loading && (
         <motion.div
-          className="h-screen w-full bg-neutral-100 flex justify-center items-center gap-x-8 absolute top-0 left-0 z-1000"
+          className="h-screen w-full flex justify-center items-center gap-x-8 absolute top-0 left-0 z-1000"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
