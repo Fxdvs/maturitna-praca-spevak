@@ -15,13 +15,14 @@ export default function Page() {
   const [showAlert, setShowAlert] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchResult, setSearchResult] = useState(false);
+  const [result, setResult] = useState([]);
 
   function handleSearch(id: string) {
-    // const options = {
-    //   enableHighAccuracy: true, // Vyžaduje GPS namiesto WiFi/IP
-    //   timeout: 15000, // Max 15 sekúnd čakania
-    //   maximumAge: 0, // Vždy získa novú polohu, nie cache
-    // };
+    const options = {
+      enableHighAccuracy: true, // Vyžaduje GPS namiesto WiFi/IP
+      timeout: 15000, // Max 15 sekúnd čakania
+      maximumAge: 0, // Vždy získa novú polohu, nie cache
+    };
 
     if ("geolocation" in navigator) {
       setShowAlert(true);
@@ -56,66 +57,65 @@ export default function Page() {
           setSearching(false);
           setSearchResult(true);
 
+          try {
+            // 1️⃣ Zavoláme /api/bars
+            const barsRes = await fetch(
+              `/api/bars?lat=${coords.lat}&lng=${coords.lng}`
+            );
+            const barsData = await barsRes.json();
+            console.log("Bars API response:", barsData);
 
+            // 2️⃣ Zavoláme /api/prices s drinkType a zoznamom barov
+            const pricesRes = await fetch("/api/prices", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                bars: barsData.bars, // zoznam barov z predchádzajúceho fetch
+                drinkType: id,
+              }),
+            });
+            const pricesData = await pricesRes.json();
+            console.log("Prices API response:", pricesData);
 
-          //   try {
-          //     // 1️⃣ Zavoláme /api/bars
-          //     const barsRes = await fetch(
-          //       `/api/bars?lat=${coords.lat}&lng=${coords.lng}`
-          //     );
-          //     const barsData = await barsRes.json();
-          //     console.log("Bars API response:", barsData);
+            // 3️⃣ Pridáme icon ku každému baru
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const barsWithIcon = pricesData.bars.map((bar: any) => ({
+              ...bar,
+            }));
 
-          //     // 2️⃣ Zavoláme /api/prices s drinkType a zoznamom barov
-          //     const pricesRes = await fetch("/api/prices", {
-          //       method: "POST",
-          //       headers: { "Content-Type": "application/json" },
-          //       body: JSON.stringify({
-          //         bars: barsData.bars, // zoznam barov z predchádzajúceho fetch
-          //       }),
-          //     });
-          //     const pricesData = await pricesRes.json();
-          //     console.log("Prices API response:", pricesData);
-
-          //     // 3️⃣ Pridáme icon ku každému baru
-          //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          //     const barsWithIcon = pricesData.bars.map((bar: any) => ({
-          //       ...bar,
-          //     }));
-
-          //     console.log("Bars with icon:", barsWithIcon);
-          //     // setBarsResult(barsWithIcon);
-          //   } catch (error) {
-          //     console.error("Chyba pri fetchovaní barov alebo cien:", error);
-          //     setShowAlert(true);
-          //     setAlertMessage("Chyba pri hľadaní barov. Skúste to znova.");
-          //   }
-          //   // setSearching(false);
-          //   // setSearchingResult(true);
-          // },
-          // (error) => {
-          //   setShowAlert(true);
-          //   let errorMsg = "❌ ";
-          //   switch (error.code) {
-          //     case error.PERMISSION_DENIED:
-          //       errorMsg +=
-          //         "Prístup k polohe bol zamietnutý. Povoľte lokalizáciu v nastaveniach prehliadača.";
-          //       break;
-          //     case error.POSITION_UNAVAILABLE:
-          //       errorMsg +=
-          //         "GPS signál nie je dostupný. Skúste sa presunúť von alebo reštartujte aplikáciu.";
-          //       break;
-          //     case error.TIMEOUT:
-          //       errorMsg +=
-          //         "GPS signál trvá príliš dlho. Skúste to znova alebo sa presuňte na miesto s lepším signálom.";
-          //       break;
-          //     default:
-          //       errorMsg += "Chyba pri získavaní polohy: " + error.message;
-          //   }
-          // setAlertMessage(errorMsg);
-          // setSearching(false);
-        }
-        // options // ✅ Pridané GPS options
+            console.log("Bars with icon:", barsWithIcon);
+            setResult(barsWithIcon);
+          } catch (error) {
+            console.error("Chyba pri fetchovaní barov alebo cien:", error);
+            setShowAlert(true);
+            setAlertMessage("Chyba pri hľadaní barov. Skúste to znova.");
+          }
+          setSearching(false);
+          setSearchResult(true);
+        },
+        (error) => {
+          setShowAlert(true);
+          let errorMsg = "❌ ";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg +=
+                "Prístup k polohe bol zamietnutý. Povoľte lokalizáciu v nastaveniach prehliadača.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg +=
+                "GPS signál nie je dostupný. Skúste sa presunúť von alebo reštartujte aplikáciu.";
+              break;
+            case error.TIMEOUT:
+              errorMsg +=
+                "GPS signál trvá príliš dlho. Skúste to znova alebo sa presuňte na miesto s lepším signálom.";
+              break;
+            default:
+              errorMsg += "Chyba pri získavaní polohy: " + error.message;
+          }
+          setAlertMessage(errorMsg);
+          setSearching(false);
+        },
+        options
       );
     } else {
       setShowAlert(true);
@@ -153,7 +153,7 @@ export default function Page() {
           <SelectDrink key="select-drink" onclick={handleSearch} />
         )}
         {searching && !searchResult && <Searching key="searching" />}
-        {searchResult && <SearchResult key="search-result" />}
+        {searchResult && <SearchResult key="search-result" bars={result} />}
       </AnimatePresence>
     </section>
   );

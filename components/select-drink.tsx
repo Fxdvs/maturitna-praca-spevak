@@ -16,7 +16,7 @@ export default function SelectDrink({ onclick: onclick }: SelectDrinkProps) {
       transition={{ duration: 0.3, delay: 1.4 }}
       className="flex flex-col justify-center items-center gap-4 absolute z-10"
     >
-      <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-neutral-100 to-neutral-300 py-5 italic">
+      <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-transparent bg-clip-text bg-linear-to-br from-neutral-100 to-neutral-300 py-5 italic">
         Tvoj sprievodca drinkmi za najlepšiu cenu
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4  max-w-2xl">
