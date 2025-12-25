@@ -53,7 +53,7 @@ export default function SearchResult({ bars = [] }: { bars: Bar[] }) {
       case "price":
         return parseFloat(a.price) - parseFloat(b.price);
       case "open":
-        return b.openNow ? -1 : 1;
+        return b.openNow ? 1 : -1;
       case "rating":
         return b.rating - a.rating;
       default:
