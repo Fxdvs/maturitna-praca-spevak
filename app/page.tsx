@@ -52,10 +52,6 @@ export default function Page() {
 
           setShowAlert(false);
           setSearching(true);
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-
-          setSearching(false);
-          setSearchResult(true);
 
           try {
             // 1️⃣ Zavoláme /api/bars

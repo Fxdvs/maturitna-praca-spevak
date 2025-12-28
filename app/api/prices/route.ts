@@ -2,27 +2,63 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import * as cheerio from "cheerio";
 import Tesseract from "tesseract.js";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
 );
 
-const sampleDrinks = [
-  "Pilsner Urquell",
-  "Corona",
-  "Guinness",
-  "Stella Artois",
-  "Heineken",
-  "IPA",
-  "Stout",
-];
+// ✅ Drink options based on type
+const drinksByType: Record<string, string[]> = {
+  beer: [
+    "Pilsner Urquell",
+    "Corona",
+    "Guinness",
+    "Stella Artois",
+    "Heineken",
+    "IPA",
+    "Stout",
+    "Lager",
+  ],
+  wine: [
+    "Red Wine",
+    "White Wine",
+    "Rosé",
+    "Prosecco",
+    "Chardonnay",
+    "Merlot",
+    "Cabernet Sauvignon",
+  ],
+  spirits: [
+    "Vodka",
+    "Whiskey",
+    "Rum",
+    "Gin",
+    "Tequila",
+    "Cognac",
+    "Brandy",
+  ],
+  cocktails: [
+    "Mojito",
+    "Margarita",
+    "Cosmopolitan",
+    "Old Fashioned",
+    "Martini",
+    "Negroni",
+    "Daiquiri",
+  ],
+};
 
 // ============================================
 // WEB SCRAPER FUNKCIE
 // ============================================
 
-async function scrapeBarWebsite(barName: string, barUrl?: string): Promise<{
+async function scrapeBarWebsite(
+  barName: string,
+  barUrl?: string,
+  drinkType: string = "beer" // ✅ Pridaný drink type parameter
+): Promise<{
   drinkName: string;
   price: number;
   source: "scraped" | "generated" | "ocr";
@@ -99,17 +135,17 @@ async function scrapeBarWebsite(barName: string, barUrl?: string): Promise<{
     }
 
     // Fallback: Vrátim generovanú cenu
+    const drinks = drinksByType[drinkType] || drinksByType.beer; // ✅ Použitie drink type
     return {
-      drinkName:
-        sampleDrinks[Math.floor(Math.random() * sampleDrinks.length)],
+      drinkName: drinks[Math.floor(Math.random() * drinks.length)],
       price: parseFloat((Math.random() * 5 + 2).toFixed(2)),
       source: "generated",
     };
   } catch (error) {
     console.error(`Error scraping ${barName}:`, error);
+    const drinks = drinksByType[drinkType] || drinksByType.beer; // ✅ Použitie drink type
     return {
-      drinkName:
-        sampleDrinks[Math.floor(Math.random() * sampleDrinks.length)],
+      drinkName: drinks[Math.floor(Math.random() * drinks.length)],
       price: parseFloat((Math.random() * 5 + 2).toFixed(2)),
       source: "generated",
     };
@@ -199,6 +235,20 @@ function findCheapestDrink(bars: any[]): any {
 // ============================================
 
 export async function POST(req: Request) {
+  // ✅ Rate limiting check
+  const clientIp = getClientIp(req);
+  const rateLimitResult = await checkRateLimit(clientIp, "prices");
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      {
+        error: "Príliš veľa požiadaviek. Skúste znova neskôr.",
+        resetAt: rateLimitResult.resetAt,
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const { bars, drinkType } = await req.json();
 
@@ -233,21 +283,23 @@ export async function POST(req: Request) {
     if (dbBars && dbBars.length > 0) {
       console.log(`✅ Found ${dbBars.length} bars in database`);
 
-      // Fetch ceny z databázy
+      // Fetch ceny z databázy pre daný drink type
       const { data: prices } = await supabase
         .from("prices")
         .select("*")
         .in(
           "bar_id",
           dbBars.map((b: any) => b.id)
-        );
+        )
+        .eq("drink_type", drinkType);
 
       barsWithPrices = await Promise.all(
         dbBars.map(async (bar: any) => {
-          const barPrice = prices?.find((p: any) => p.bar_id === bar.id);
+          const barPrice = prices?.find((p: any) => p.bar_id === bar.id && p.drink_type === drinkType);
 
           // Ak existuje cena v DB, použi ju
           if (barPrice) {
+            console.log(`✅ Using cached price for ${bar.name}`);
             return {
               id: bar.id,
               place_id: bar.place_id,
@@ -266,7 +318,21 @@ export async function POST(req: Request) {
 
           // Inak skúšaj web scraper + OCR
           console.log(`🕷️ Scraping website for ${bar.name}...`);
-          const scrapedData = await scrapeBarWebsite(bar.name, bar.website);
+          const scrapedData = await scrapeBarWebsite(bar.name, bar.website, drinkType);
+
+          // ✅ Ulož novu cenu do databázy
+          if (scrapedData.source !== "generated") {
+            console.log(`💾 Saving price for ${bar.name} to database...`);
+            await supabase.from("prices").upsert({
+              bar_id: bar.id,
+              drink_name: scrapedData.drinkName,
+              price: scrapedData.price,
+              source: scrapedData.source,
+              drink_type: drinkType,
+            }, {
+              onConflict: "bar_id,drink_type"
+            });
+          }
 
           return {
             id: bar.id,
@@ -297,7 +363,7 @@ export async function POST(req: Request) {
 
       const scrapedBars = await Promise.all(
         barsWithoutPrices.map(async (bar: any) => {
-          const scrapedData = await scrapeBarWebsite(bar.name);
+          const scrapedData = await scrapeBarWebsite(bar.name, bar.website, drinkType); // ✅ Pridaný drinkType
           return {
             ...bar,
             drinkName: scrapedData.drinkName,
