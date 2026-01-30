@@ -9,6 +9,61 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
 );
 
+// ✅ Realistické ceny alkoholu v baroch na Slovensku (2026)
+// Zdroj: kamnapivo.sk, closer.sme.sk, visitbratislava.com
+const drinkPrices: Record<string, number> = {
+  // PIVO (1.50€ - 2.50€)
+  "Pilsner Urquell": 2.20,
+  "Corona": 2.80,
+  "Guinness": 3.20,
+  "Stella Artois": 2.60,
+  "Heineken": 2.50,
+  "IPA": 2.90,
+  "Zlatý Bažant": 1.80,
+  "Corgoň": 1.70,
+  "Šariš": 1.60,
+  "Kelt": 1.50,
+
+  // VÍNO (3.00€ - 5.50€ za pohár)
+  "Červené víno": 3.50,
+  "Biele víno": 3.20,
+  "Rosé": 3.80,
+  "Prosecco": 4.50,
+  "Chardonnay": 4.20,
+  "Merlot": 4.00,
+  "Cabernet Sauvignon": 4.80,
+  "Sauvignon Blanc": 3.90,
+
+  // TVRDÝ ALKOHOL (6.00€ - 9.00€ za panák/50ml)
+  "Vodka": 6.00,
+  "Whiskey": 8.50,
+  "Jack Daniels": 9.00,
+  "Jameson": 8.00,
+  "Rum": 6.50,
+  "Bacardi": 7.00,
+  "Gin": 7.50,
+  "Bombay Sapphire": 8.50,
+  "Tequila": 7.00,
+  "Cognac": 12.00,
+  "Brandy": 6.50,
+  "Jägermeister": 6.00,
+  "Becherovka": 5.50,
+
+  // KOKTAILY (7.00€ - 14.00€)
+  "Mojito": 7.50,
+  "Margarita": 8.00,
+  "Cosmopolitan": 9.00,
+  "Old Fashioned": 10.00,
+  "Martini": 9.50,
+  "Negroni": 8.50,
+  "Daiquiri": 7.50,
+  "Piña Colada": 8.00,
+  "Aperol Spritz": 7.00,
+  "Manhattan": 10.50,
+  "Sex on the Beach": 8.00,
+  "Long Island Iced Tea": 9.00,
+};
+
 // ✅ Drink options based on type
 const drinksByType: Record<string, string[]> = {
   beer: [
@@ -18,26 +73,35 @@ const drinksByType: Record<string, string[]> = {
     "Stella Artois",
     "Heineken",
     "IPA",
-    "Stout",
-    "Lager",
+    "Zlatý Bažant",
+    "Corgoň",
+    "Šariš",
+    "Kelt",
   ],
   wine: [
-    "Red Wine",
-    "White Wine",
+    "Červené víno",
+    "Biele víno",
     "Rosé",
     "Prosecco",
     "Chardonnay",
     "Merlot",
     "Cabernet Sauvignon",
+    "Sauvignon Blanc",
   ],
   spirits: [
     "Vodka",
     "Whiskey",
+    "Jack Daniels",
+    "Jameson",
     "Rum",
+    "Bacardi",
     "Gin",
+    "Bombay Sapphire",
     "Tequila",
     "Cognac",
     "Brandy",
+    "Jägermeister",
+    "Becherovka",
   ],
   cocktails: [
     "Mojito",
@@ -47,12 +111,33 @@ const drinksByType: Record<string, string[]> = {
     "Martini",
     "Negroni",
     "Daiquiri",
+    "Piña Colada",
+    "Aperol Spritz",
+    "Manhattan",
+    "Sex on the Beach",
+    "Long Island Iced Tea",
   ],
 };
 
 // ============================================
 // WEB SCRAPER FUNKCIE
 // ============================================
+
+// Generuj realistický nápoj a jeho cenu podľa typu
+function generateRealisticDrink(drinkType: string): { name: string; price: number } {
+  const drinks = drinksByType[drinkType] || drinksByType.beer;
+  const randomDrink = drinks[Math.floor(Math.random() * drinks.length)];
+  const price = drinkPrices[randomDrink];
+
+  // Malá variácia v cene (±10%) aby nebolo všade presne rovnaké
+  const variance = price * 0.1;
+  const finalPrice = price + (Math.random() * variance * 2 - variance);
+
+  return {
+    name: randomDrink,
+    price: parseFloat(finalPrice.toFixed(2)),
+  };
+}
 
 async function scrapeBarWebsite(
   barName: string,
@@ -135,18 +220,18 @@ async function scrapeBarWebsite(
     }
 
     // Fallback: Vrátim generovanú cenu
-    const drinks = drinksByType[drinkType] || drinksByType.beer; // ✅ Použitie drink type
+    const generatedDrink = generateRealisticDrink(drinkType);
     return {
-      drinkName: drinks[Math.floor(Math.random() * drinks.length)],
-      price: parseFloat((Math.random() * 5 + 2).toFixed(2)),
+      drinkName: generatedDrink.name,
+      price: generatedDrink.price,
       source: "generated",
     };
   } catch (error) {
     console.error(`Error scraping ${barName}:`, error);
-    const drinks = drinksByType[drinkType] || drinksByType.beer; // ✅ Použitie drink type
+    const generatedDrink = generateRealisticDrink(drinkType);
     return {
-      drinkName: drinks[Math.floor(Math.random() * drinks.length)],
-      price: parseFloat((Math.random() * 5 + 2).toFixed(2)),
+      drinkName: generatedDrink.name,
+      price: generatedDrink.price,
       source: "generated",
     };
   }

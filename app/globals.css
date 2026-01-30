@@ -121,3 +121,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.font-whisper {
+  font-family: var(--font-whisper);
+}
