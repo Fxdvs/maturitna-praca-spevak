@@ -9,6 +9,7 @@ import SearchResult from "@/components/search-result";
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import Footer from "@/components/footer";
 
 export default function Page() {
   const [alertMessage, setAlertMessage] = useState("");
@@ -151,6 +152,7 @@ export default function Page() {
         {searching && !searchResult && <Searching key="searching" />}
         {searchResult && <SearchResult key="search-result" bars={result} />}
       </AnimatePresence>
+      <Footer/>
     </section>
   );
 }
