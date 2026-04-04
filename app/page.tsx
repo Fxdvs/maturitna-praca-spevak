@@ -40,7 +40,7 @@ export default function Page() {
           console.log("User coordinates:", coords);
           console.log("GPS Accuracy:", accuracy, "meters");
 
-          // ✅ Validácia presnosti - ak je presnosť horšia ako 100m, upozorni používateľa
+          // Validácia presnosti - ak je presnosť horšia ako 100m, upozorni používateľa
           if (accuracy > 100) {
             setAlertMessage(
               `⚠️ Nízka presnosť GPS (${Math.round(
