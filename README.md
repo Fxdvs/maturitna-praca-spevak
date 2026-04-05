@@ -1,4 +1,4 @@
-# Kde je lacnejšie? — Maturitná práca
+# Aplikácia na vyhľadávanie najlacnejšieho piva v okolí s využitím AI
 
 Webová aplikácia na vyhľadávanie a porovnávanie cien alkoholických nápojov v baroch vo vašom okolí. Stačí vybrať typ nápoja, aplikácia zistí vašu polohu a nájde najbližšie bary zoradené podľa ceny, vzdialenosti, hodnotenia alebo otvorenosti.
 
