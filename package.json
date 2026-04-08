@@ -16,7 +16,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
     "motion": "^12.23.12",
-    "next": "16.0.10",
+    "next": "^16.2.2",
     "openai": "^5.19.1",
     "postprocessing": "^6.38.1",
     "react": "19.2.3",
