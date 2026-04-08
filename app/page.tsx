@@ -150,7 +150,16 @@ export default function Page() {
           <SelectDrink key="select-drink" onclick={handleSearch} />
         )}
         {searching && !searchResult && <Searching key="searching" />}
-        {searchResult && <SearchResult key="search-result" bars={result} />}
+        {searchResult && (
+          <SearchResult
+            key="search-result"
+            bars={result}
+            onBack={() => {
+              setSearchResult(false);
+              setResult([]);
+            }}
+          />
+        )}
       </AnimatePresence>
       <Footer/>
     </section>

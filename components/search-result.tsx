@@ -13,7 +13,13 @@ interface Bar {
   price: string;
 }
 
-export default function SearchResult({ bars = [] }: { bars: Bar[] }) {
+export default function SearchResult({
+  bars = [],
+  onBack,
+}: {
+  bars: Bar[];
+  onBack?: () => void;
+}) {
   const [filter, setFilter] = useState<
     "distance" | "price" | "open" | "rating"
   >("distance");
@@ -69,9 +75,28 @@ export default function SearchResult({ bars = [] }: { bars: Bar[] }) {
       transition={{ duration: 0.3, delay: 0.3 }}
       className="h-screen w-full absolute top-0 left-0 flex flex-col gap-4 py-8 px-4 overflow-y-auto"
     >
-      <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-transparent bg-clip-text bg-linear-to-br from-neutral-100 to-neutral-300 py-5 text-center">
-        Výsledky vyhľadávania
-      </h1>
+      {onBack && (
+        <motion.button
+          onClick={onBack}
+          className="absolute z-9999 top-3 right-3 flex items-center gap-2 p-2.5 rounded-full bg-neutral-50/10 border border-neutral-50/10 text-neutral-50 hover:bg-neutral-50/15 cursor-pointer backdrop-blur-lg text-sm font-semibold transition-all"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            className="bi bi-door-open-fill"
+            viewBox="0 0 16 16"
+          >
+            <path d="M1.5 15a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1H13V2.5A1.5 1.5 0 0 0 11.5 1H11V.5a.5.5 0 0 0-.57-.495l-7 1A.5.5 0 0 0 3 1.5V15zM11 2h.5a.5.5 0 0 1 .5.5V15h-1zm-2.5 8c-.276 0-.5-.448-.5-1s.224-1 .5-1 .5.448.5 1-.224 1-.5 1" />
+          </svg>
+        </motion.button>
+      )}
+      <div className="flex items-center justify-center relative py-5">
+        <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-transparent bg-clip-text bg-linear-to-br from-neutral-100 to-neutral-300 text-center">
+          Výsledky vyhľadávania
+        </h1>
+      </div>
 
       {/* Filter Buttons */}
       <div className="w-full flex justify-center mb-4">
